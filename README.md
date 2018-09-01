@@ -1,2 +1,2 @@
 # AddToCalendar
-A Google Chrome extension that automatically adds events to Google Calendar. Works with Facebook and LinkedIn events.
+A Google Chrome extension that automatically adds Facebook events to Google Calendar with one click.
