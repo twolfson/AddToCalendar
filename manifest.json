@@ -2,13 +2,18 @@
   "name": "Add to Calendar",
   "version": "1.0",
   "description": "A Google Chrome extension that automatically adds Facebook events to Google Calendar with one click.",
-  "permissions": ["declarativeContent"],
+  "permissions": ["declarativeContent", "activeTab", "clipboardWrite"],
+  "content_security_policy": "script-src 'self' https://connect.facebook.net; object-src 'self'",
   "background": {
       "scripts": ["background.js"],
       "persistent": false
   },
+  "content_scripts": [
+   {
+     "matches": ["http://*.facebook.com/events/*", "https://*.facebook.com/events/*"],
+     "js": ["contentscript.js"]
+   }],
   "page_action": {
-    "default_popup": "popup.html",
     "default_icon": {
       "16": "images/calendar_icon16.png",
       "32": "images/calendar_icon32.png",

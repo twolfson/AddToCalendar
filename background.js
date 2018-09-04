@@ -8,11 +8,23 @@ chrome.runtime.onInstalled.addListener(function() {
   chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
       chrome.declarativeContent.onPageChanged.addRules([{
         conditions: [new chrome.declarativeContent.PageStateMatcher({
-          pageUrl: {urlContains: 'www.facebook.com/events/',  schemes: ['https', 'http']},
-          // Need to check for www.facebook.com/events/\d+; doesn't work right now
+          // URL has to match that of a specific Facebook event
+          pageUrl: {urlMatches: 'www.facebook.com/events/[0-9]+'},
         })
         ],
             actions: [new chrome.declarativeContent.ShowPageAction()]
       }]);
     });
 });
+
+/* Listener for browser icon clicks. Sends message to contentscript.js with tab id. */
+chrome.pageAction.onClicked.addListener(function(tab) {
+    chrome.tabs.sendMessage(tab.id, {txt: "onClicked"});
+});
+
+/* Listener for contentscript when it has done generating a calendar event link. */
+chrome.runtime.onMessage.addListener(
+  function(request, sender, sendResponse) {
+    // Open new tab with calendar event details inputed automatically
+    chrome.tabs.create({ "url": request.url}, function (tab) {});
+  });
