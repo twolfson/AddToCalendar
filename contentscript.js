@@ -2,19 +2,43 @@ chrome.runtime.onMessage.addListener(gotMessage);
 
 /* Reciever function for recieving onclick messages from background.js */
 function gotMessage(request, sender, sendResponse) {
-  // (For debugging) console.log(request.txt);
-  addToCalendar();
+
+  if (request.txt == "are you there?") {
+
+  // Will respond to messages asking if this script has already been injected in a webpage
+    sendResponse({message: "yes!"});
+
+  } else if (request.txt == "onClicked") {
+
+    addToCalendar();
+
+  }
 }
 
 /* Adds event information onto google calendar event and registers API calls? */
 function addToCalendar() {
+
+  // Reload page (bug fix)
+  //window.location.reload(false);
 
   // Do some crude webscraping to avoid needing user permissions to access event info.
   var title = document.getElementById("seo_h1_tag").textContent;
   var time = document.getElementsByClassName("_2ycp _5xhk")[0].textContent;
   // Second senario for location is for event pages with multiple dates
   var location = document.getElementsByClassName("_5xhp fsm fwn fcg")[1].textContent || document.getElementById("u_0_18").textContent;
-  var details = document.getElementsByClassName("_63ew")[0].innerText;
+
+  var detailsTabNotOpen = false;
+  try {
+  	var details = document.getElementsByClassName("_63ew") ? document.getElementsByClassName("_63ew")[0].innerText : null;
+  } catch (e) {
+  	detailsTabNotOpen = true;
+    console.log(e);
+  }
+
+  if (detailsTabNotOpen) {
+    alert('Please click the "About" tab on the event page to reveal event details.');
+  	return;
+  }
 
   /* //For debugging purposes
   console.log("Title: " + title);

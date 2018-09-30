@@ -19,7 +19,17 @@ chrome.runtime.onInstalled.addListener(function() {
 
 /* Listener for browser icon clicks. Sends message to contentscript.js with tab id. */
 chrome.pageAction.onClicked.addListener(function(tab) {
-    chrome.tabs.sendMessage(tab.id, {txt: "onClicked"});
+
+  // Check if contentscript has already been injected. If not, manually inject (bug fix)
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    chrome.tabs.sendMessage(tabs[0].id, {txt: "are you there?"}, function(response) {
+        if (!response) {
+            chrome.tabs.executeScript(null,{file:"contentscript.js"});
+        }
+    });
+  });
+
+  chrome.tabs.sendMessage(tab.id, {txt: "onClicked"});
 });
 
 /* Listener for contentscript when it has done generating a calendar event link. */
