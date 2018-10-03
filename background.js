@@ -24,12 +24,17 @@ chrome.pageAction.onClicked.addListener(function(tab) {
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
     chrome.tabs.sendMessage(tabs[0].id, {txt: "are you there?"}, function(response) {
         if (!response) {
+          console.log("injecting?");
             chrome.tabs.executeScript(null,{file:"contentscript.js"});
+            setTimeout(function(){
+              // Message has to wait until the script has been injected
+              chrome.tabs.sendMessage(tab.id, {txt: "onClicked"});
+            }, 200);
+        } else {
+          chrome.tabs.sendMessage(tab.id, {txt: "onClicked"});
         }
     });
   });
-
-  chrome.tabs.sendMessage(tab.id, {txt: "onClicked"});
 });
 
 /* Listener for contentscript when it has done generating a calendar event link. */

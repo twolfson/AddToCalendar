@@ -22,22 +22,32 @@ function addToCalendar() {
   //window.location.reload(false);
 
   // Do some crude webscraping to avoid needing user permissions to access event info.
-  var title = document.getElementById("seo_h1_tag").textContent;
-  var time = document.getElementsByClassName("_2ycp _5xhk")[0].textContent;
-  // Second senario for location is for event pages with multiple dates
-  var location = document.getElementsByClassName("_5xhp fsm fwn fcg")[1].textContent || document.getElementById("u_0_18").textContent;
+  try {
+    var title = document.getElementById("seo_h1_tag").textContent;
+  } catch (e) {
+    alert("Please wait for the title to load. - AddToCalendar Bot");
+    return;
+  }
 
-  var detailsTabNotOpen = false;
+  try {
+    var time = document.getElementsByClassName("_2ycp _5xhk")[0].getAttribute("content");
+  } catch (e) {
+    alert("Please wait for the time to load. - AddToCalendar Bot");
+    return;
+  }
+
+  try {
+    // Second senario for location is for event pages with multiple dates (bugs out when there is no location as u_0_18 gets replaced by something else)
+    var location = document.getElementsByClassName("_5xhp fsm fwn fcg")[1].textContent || document.getElementById("u_0_18").textContent;
+  } catch (e) {
+    var location = "";
+  }
+
   try {
   	var details = document.getElementsByClassName("_63ew") ? document.getElementsByClassName("_63ew")[0].innerText : null;
   } catch (e) {
-  	detailsTabNotOpen = true;
-    console.log(e);
-  }
-
-  if (detailsTabNotOpen) {
-    alert('Please click the "About" tab on the event page to reveal event details.');
-  	return;
+  	alert('Please click the "About" tab on this event page if you want to add event details to your calendar. - AddToCalendar Bot');
+  	var details = "";
   }
 
   /* //For debugging purposes
@@ -61,19 +71,47 @@ function addToCalendar() {
     To convert to the datetime format: (new Date()).toISOString().replace(/-|:|\.\d\d\d/g,"");
   */
 
-  //TODO: Get time working
 
-  // Max URI length is 2000 chars, but let's keep under 1800
+  // Get start and (possibly) end time.
+  var hasEndTime;
+
+  // If end time exists, add both start and end times.
+  if (time.indexOf('to') != -1) { // if there is a "to" in the time string
+
+    // based on this input format from Facebook: time = "2018-10-04T12:00:00-07:00 to 2018-10-04T14:00:00-07:00"
+
+    var startTime = new Date(time.substring(0, time.indexOf('to') - 7));
+    //console.log("Start time: " + startTime);
+
+    var endTime = new Date(time.substring(time.indexOf('to') + 3, time.length - 6));
+    //console.log("End time: " + endTime);
+
+    hasEndTime = true;
+
+  } else {
+    var startTime = new Date(time.substring(0, time.length - 6));
+    var endTime = startTime;
+
+  }
+
+  // Form time string that Google can parse
+  time = startTime.toISOString().replace(/-|:|\.\d\d\d/g,"") + "/" + endTime.toISOString().replace(/-|:|\.\d\d\d/g,"");
+
+
+  // Max URI length is 2000 chars, but we will keep under 1850
   // to also allow a buffer for google login/redirect urls etc.
   // (This limit is not a hard limit in the code,
-  // but we don't surpass it by more than a few tens of chars.)
-  var maxLength = 1800;
+  // but won't surpass it by more than a few tens of chars.)
+  var maxLength = 1850;
 
   // Start building the URL
 	var url = "http://www.google.com/calendar/event?action=TEMPLATE";
 
   // Page title to event title
   url += "&text=" + TrimURITo(title, maxLength);
+
+  // Add time to event
+  url += "&dates=" + time;
 
   // Check if the selected text contains a US formatted address
   // and it its first 100 chars to URI if so
@@ -82,14 +120,29 @@ function addToCalendar() {
       url += "&location=" + TrimURITo(location, maxLength - url.length);
   }
 
+  // Make sure the & characters in the description don't mess up the url encoding.
+  details = details.replaceAll("&", "and");
   // URL goes to star of details (event description)
-  //TODO: Add backslashes to relavant symbols that mess with the url (e.g. &)
   url += "&details=" + TrimURITo(details, maxLength - url.length);
+
 
   // Send message back to background.js with constructed url to open in new tabs
   chrome.runtime.sendMessage({url: url});
 
 }
+
+// Replaces all instances of a string with another string. Code from:
+// https://stackoverflow.com/questions/2116558/fastest-method-to-replace-all-instances-of-a-character-in-a-string
+String.prototype.replaceAll = function(str1, str2, ignore)
+{
+    return this.replace(new RegExp(str1.replace(/([\/\,\!\\\^\$\{\}\[\]\(\)\.\*\+\?\|\<\>\-\&])/g,"\\$&"),(ignore?"gi":"g")),(typeof(str2)=="string")?str2.replace(/\$/g,"$$$$"):str2);
+}
+
+// // Inserts string at given index of another string
+// function insertString(original, strToInsert, index)
+// {
+//     return original.substr(0, index) + strToInsert + original.substr(index);
+// }
 
 /* Function from modified code from: https://github.com/borismasis/send-to-calendar) */
 // Trim text so that its URI encoding fits into the length limit
