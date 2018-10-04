@@ -18,9 +18,6 @@ function gotMessage(request, sender, sendResponse) {
 /* Adds event information onto google calendar event and registers API calls? */
 function addToCalendar() {
 
-  // Reload page (bug fix)
-  //window.location.reload(false);
-
   // Do some crude webscraping to avoid needing user permissions to access event info.
   try {
     var title = document.getElementById("seo_h1_tag").textContent;
@@ -56,6 +53,29 @@ function addToCalendar() {
   console.log("Location: " + location);
   console.log("Description: " + details); */
 
+  // Parse the time to a readable format for Google Calendar
+
+  // If end time exists, add both start and end times.
+  if (time.indexOf('to') != -1) { // if there is a "to" in the time string
+
+    // based on this input format from Facebook: time = "2018-10-04T12:00:00-07:00 to 2018-10-04T14:00:00-07:00"
+
+    var startTime = new Date(time.substring(0, time.indexOf('to') - 7));
+    //console.log("Start time: " + startTime);
+
+    var endTime = new Date(time.substring(time.indexOf('to') + 3, time.length - 6));
+    //console.log("End time: " + endTime);
+
+  } else {
+    // Set end time equal to start timeout
+    var startTime = new Date(time.substring(0, time.length - 6));
+    var endTime = startTime;
+  }
+
+  // Form time string that Google can parse
+  time = startTime.toISOString().replace(/-|:|\.\d\d\d/g,"") + "/" + endTime.toISOString().replace(/-|:|\.\d\d\d/g,"");
+
+
   /* Put information into a google calendar url and launch in new window (modified code from: https://github.com/borismasis/send-to-calendar)*/
   /* Reference info from https://stackoverflow.com/questions/10488831/link-to-add-to-google-calendar
     href="http://www.google.com/calendar/event?
@@ -70,33 +90,6 @@ function addToCalendar() {
 
     To convert to the datetime format: (new Date()).toISOString().replace(/-|:|\.\d\d\d/g,"");
   */
-
-
-  // Get start and (possibly) end time.
-  var hasEndTime;
-
-  // If end time exists, add both start and end times.
-  if (time.indexOf('to') != -1) { // if there is a "to" in the time string
-
-    // based on this input format from Facebook: time = "2018-10-04T12:00:00-07:00 to 2018-10-04T14:00:00-07:00"
-
-    var startTime = new Date(time.substring(0, time.indexOf('to') - 7));
-    //console.log("Start time: " + startTime);
-
-    var endTime = new Date(time.substring(time.indexOf('to') + 3, time.length - 6));
-    //console.log("End time: " + endTime);
-
-    hasEndTime = true;
-
-  } else {
-    var startTime = new Date(time.substring(0, time.length - 6));
-    var endTime = startTime;
-
-  }
-
-  // Form time string that Google can parse
-  time = startTime.toISOString().replace(/-|:|\.\d\d\d/g,"") + "/" + endTime.toISOString().replace(/-|:|\.\d\d\d/g,"");
-
 
   // Max URI length is 2000 chars, but we will keep under 1850
   // to also allow a buffer for google login/redirect urls etc.
@@ -137,12 +130,6 @@ String.prototype.replaceAll = function(str1, str2, ignore)
 {
     return this.replace(new RegExp(str1.replace(/([\/\,\!\\\^\$\{\}\[\]\(\)\.\*\+\?\|\<\>\-\&])/g,"\\$&"),(ignore?"gi":"g")),(typeof(str2)=="string")?str2.replace(/\$/g,"$$$$"):str2);
 }
-
-// // Inserts string at given index of another string
-// function insertString(original, strToInsert, index)
-// {
-//     return original.substr(0, index) + strToInsert + original.substr(index);
-// }
 
 /* Function from modified code from: https://github.com/borismasis/send-to-calendar) */
 // Trim text so that its URI encoding fits into the length limit
