@@ -17,7 +17,11 @@ function gotMessage(request, sender, sendResponse) {
 
 /* Adds event information onto google calendar event and registers API calls? */
 function addToCalendar() {
-
+  if (window.location.href.includes("/calendar.google.com")) {
+    // Don't do anything if we are on the google calendar page. This triggers because the url
+    // has the facebook event link in it, making the icon active.
+    return;
+  }
   // Do some crude webscraping to avoid needing user permissions to access event info.
   try {
     var title = document.getElementById("seo_h1_tag").textContent;
@@ -35,7 +39,9 @@ function addToCalendar() {
 
   try {
     // Second senario for location is for event pages with multiple dates (bugs out when there is no location as u_0_18 gets replaced by something else)
-    var location = document.getElementsByClassName("_5xhp fsm fwn fcg")[1].textContent || document.getElementById("u_0_18").textContent;
+    var location = document.getElementsByClassName("_5xhp fsm fwn fcg")[1].textContent ||
+      document.getElementsByClassName("_5xhp fsm fwn fcg")[2].textContent ||
+      document.getElementById("u_0_18").textContent;
   } catch (e) {
     var location = "";
   }
@@ -67,9 +73,10 @@ function addToCalendar() {
     //console.log("End time: " + endTime);
 
   } else {
-    // Set end time equal to start timeout
+    // Set end time equal to start time + 1 hour
     var startTime = new Date(time.substring(0, time.length - 6));
-    var endTime = startTime;
+    var endTime = new Date(startTime.getTime());
+    endTime.addHours(1);
   }
 
   // Form time string that Google can parse
@@ -115,8 +122,8 @@ function addToCalendar() {
 
   // Make sure the & characters in the description don't mess up the url encoding.
   details = details.replaceAll("&", "and");
-  // URL goes to star of details (event description)
-  url += "&details=" + TrimURITo(details, maxLength - url.length);
+  // URL goes to star of details (event description) as well as a link to the event.
+  url += "&details=" + "Event link: " + window.location.href + "%0A%0A" + TrimURITo(details, maxLength - url.length);
 
 
   // Send message back to background.js with constructed url to open in new tabs
@@ -129,6 +136,13 @@ function addToCalendar() {
 String.prototype.replaceAll = function(str1, str2, ignore)
 {
     return this.replace(new RegExp(str1.replace(/([\/\,\!\\\^\$\{\}\[\]\(\)\.\*\+\?\|\<\>\-\&])/g,"\\$&"),(ignore?"gi":"g")),(typeof(str2)=="string")?str2.replace(/\$/g,"$$$$"):str2);
+}
+
+
+// Adds hours to date object. Code from: https://stackoverflow.com/questions/1050720/adding-hours-to-javascript-date-object
+Date.prototype.addHours = function(h) {
+  this.setTime(this.getTime() + (h*60*60*1000));
+  return this;
 }
 
 /* Function from modified code from: https://github.com/borismasis/send-to-calendar) */
