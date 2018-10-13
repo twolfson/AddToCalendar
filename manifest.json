@@ -1,6 +1,6 @@
 {
   "name": "Add to Calendar",
-  "version": "0.0.1",
+  "version": "1.2",
   "description": "Automatically add Facebook events to Google Calendar with one click.",
   "permissions": ["declarativeContent", "activeTab", "clipboardWrite", "*://*/*"],
   "content_security_policy": "script-src 'self' https://connect.facebook.net; object-src 'self'",

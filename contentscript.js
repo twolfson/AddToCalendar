@@ -40,8 +40,16 @@ function addToCalendar() {
   try {
     // Second senario for location is for event pages with multiple dates (bugs out when there is no location as u_0_18 gets replaced by something else)
     var location = document.getElementsByClassName("_5xhp fsm fwn fcg")[1].textContent ||
+      document.getElementsByClassName("_5xhk")[1].textContent ||
       document.getElementsByClassName("_5xhp fsm fwn fcg")[2].textContent ||
       document.getElementById("u_0_18").textContent;
+
+    // Check if we accidentally got the wrong value for location (e.g. location = OCT12Fri8:00 PMOCT13Sat8:00 PMOCT14Sun5:00 PM 3)
+    if (location.includes(":")) {
+      location = document.getElementsByClassName("_5xhp fsm fwn fcg")[2].textContent ||
+      document.getElementById("u_0_18").textContent;
+    }
+
   } catch (e) {
     var location = "";
   }
@@ -107,6 +115,9 @@ function addToCalendar() {
   // Start building the URL
 	var url = "http://www.google.com/calendar/event?action=TEMPLATE";
 
+  // Make sure the &, +, and + characters in the title don't mess up the url encoding.
+  title = cleanStringForURL(title);
+
   // Page title to event title
   url += "&text=" + TrimURITo(title, maxLength);
 
@@ -120,10 +131,16 @@ function addToCalendar() {
       url += "&location=" + TrimURITo(location, maxLength - url.length);
   }
 
-  // Make sure the & characters in the description don't mess up the url encoding.
-  details = details.replaceAll("&", "and");
+  // Make sure the & and # characters in the description don't mess up the url encoding.
+  details = cleanStringForURL(details);
+
+  // Store and clean url of Facebook event page
+  var fbURL = window.location.href;
+  if (fbURL.indexOf("?") != -1) {
+    fbURL = fbURL.substring(0, fbURL.indexOf("?"));
+  }
   // URL goes to star of details (event description) as well as a link to the event.
-  url += "&details=" + "Event link: " + window.location.href + "%0A%0A" + TrimURITo(details, maxLength - url.length);
+  url += "&details=" + "Event link: " + fbURL + "%0A%0A" + TrimURITo(details, maxLength - url.length);
 
 
   // Send message back to background.js with constructed url to open in new tabs
@@ -165,4 +182,12 @@ function TrimURITo(text, length) {
     }
 
     return textURI;
+}
+
+// Makes sure a string doesn't mess with the url encoding
+function cleanStringForURL(str) {
+  str = str.replaceAll("&", "and");
+  str = str.replaceAll("+", "and");
+  str = str.replaceAll("#", "number ");
+  return str;
 }
