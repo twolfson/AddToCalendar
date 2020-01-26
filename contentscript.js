@@ -1,20 +1,3 @@
-chrome.runtime.onMessage.addListener(gotMessage);
-
-/* Reciever function for recieving onclick messages from background.js */
-function gotMessage(request, sender, sendResponse) {
-
-  if (request.txt == "are you there?") {
-
-  // Will respond to messages asking if this script has already been injected in a webpage
-    sendResponse({message: "yes!"});
-
-  } else if (request.txt == "onClicked") {
-
-    addToCalendar();
-
-  }
-}
-
 /* Adds event information onto google calendar event and registers API calls? */
 function addToCalendar() {
   if (window.location.href.includes("/calendar.google.com")) {
@@ -55,10 +38,10 @@ function addToCalendar() {
   }
 
   try {
-  	var details = document.getElementsByClassName("_63ew") ? document.getElementsByClassName("_63ew")[0].innerText : null;
+    var details = document.getElementsByClassName("_63ew") ? document.getElementsByClassName("_63ew")[0].innerText : null;
   } catch (e) {
-  	alert('Please click the "About" tab on this event page if you want to add event details to your calendar. - AddToCalendar Bot');
-  	var details = "";
+    alert('Please click the "About" tab on this event page if you want to add event details to your calendar. - AddToCalendar Bot');
+    var details = "";
   }
 
   /* //For debugging purposes
@@ -101,7 +84,6 @@ function addToCalendar() {
     &trp=false
     &sprop=
     &sprop=name:"
-
     To convert to the datetime format: (new Date()).toISOString().replace(/-|:|\.\d\d\d/g,"");
   */
 
@@ -137,7 +119,7 @@ function addToCalendar() {
 
 
   // Send message back to background.js with constructed url to open in new tabs
-  chrome.runtime.sendMessage({url: url});
+  window.open(url);
 
 }
 
@@ -162,3 +144,4 @@ function EncodeAndTrimURIComponentTo(text, length) {
 
     return textURI;
 }
+addToCalendar();
