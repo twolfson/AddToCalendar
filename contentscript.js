@@ -97,7 +97,7 @@ function addToCalendar() {
     var url = "http://www.google.com/calendar/event?action=TEMPLATE";
 
   // Page title to event title
-  url += "&text=" + EscapeAndTrimURIComponentTo(title, maxLength);
+  url += "&text=" + EncodeAndTrimURIComponentTo(title, maxLength);
 
   // Add time to event
   url += "&dates=" + time;
