@@ -83,8 +83,7 @@ function addToCalendar() {
   } else {
     // Set end time equal to start time + 1 hour
     var startTime = new Date(time.substring(0, time.length - 6));
-    var endTime = new Date(startTime.getTime());
-    endTime.addHours(1);
+    var endTime = new Date(startTime.getTime() + 60*60*1000);
   }
 
   // Form time string that Google can parse
@@ -113,13 +112,10 @@ function addToCalendar() {
   var maxLength = 1850;
 
   // Start building the URL
-	var url = "http://www.google.com/calendar/event?action=TEMPLATE";
-
-  // Make sure the &, +, and + characters in the title don't mess up the url encoding.
-  title = cleanStringForURL(title);
+    var url = "http://www.google.com/calendar/event?action=TEMPLATE";
 
   // Page title to event title
-  url += "&text=" + TrimURITo(title, maxLength);
+  url += "&text=" + EscapeAndTrimURIComponentTo(title, maxLength);
 
   // Add time to event
   url += "&dates=" + time;
@@ -128,11 +124,8 @@ function addToCalendar() {
   // and it its first 100 chars to URI if so
   if (location) {
       // Location goes to location
-      url += "&location=" + TrimURITo(location, maxLength - url.length);
+      url += "&location=" + EncodeAndTrimURIComponentTo(location, maxLength - url.length);
   }
-
-  // Make sure the & and # characters in the description don't mess up the url encoding.
-  details = cleanStringForURL(details);
 
   // Store and clean url of Facebook event page
   var fbURL = window.location.href;
@@ -140,7 +133,7 @@ function addToCalendar() {
     fbURL = fbURL.substring(0, fbURL.indexOf("?"));
   }
   // URL goes to star of details (event description) as well as a link to the event.
-  url += "&details=" + "Event link: " + fbURL + "%0A%0A" + TrimURITo(details, maxLength - url.length);
+  url += "&details=" + "Event link: " + encodeURIComponent(fbURL) + "%20%20" + EncodeAndTrimURIComponentTo(details, maxLength - url.length);
 
 
   // Send message back to background.js with constructed url to open in new tabs
@@ -148,46 +141,24 @@ function addToCalendar() {
 
 }
 
-// Replaces all instances of a string with another string. Code from:
-// https://stackoverflow.com/questions/2116558/fastest-method-to-replace-all-instances-of-a-character-in-a-string
-String.prototype.replaceAll = function(str1, str2, ignore)
-{
-    return this.replace(new RegExp(str1.replace(/([\/\,\!\\\^\$\{\}\[\]\(\)\.\*\+\?\|\<\>\-\&])/g,"\\$&"),(ignore?"gi":"g")),(typeof(str2)=="string")?str2.replace(/\$/g,"$$$$"):str2);
-}
-
-
-// Adds hours to date object. Code from: https://stackoverflow.com/questions/1050720/adding-hours-to-javascript-date-object
-Date.prototype.addHours = function(h) {
-  this.setTime(this.getTime() + (h*60*60*1000));
-  return this;
-}
-
 /* Function from modified code from: https://github.com/borismasis/send-to-calendar) */
 // Trim text so that its URI encoding fits into the length limit
 // and return its URI encoding
-function TrimURITo(text, length) {
-    var textURI = encodeURI(text);
+function EncodeAndTrimURIComponentTo(text, length) {
+    var textURI = encodeURIComponent(text);
     if (textURI.length > length) {
         // Different charsets can lead to a different blow-up after passing the
-        // text through encodeURI, so let's estimate the blow up first,
+        // text through encodeURIComponent, so let's estimate the blow up first,
         // and then trim the text so that it fits the limit...
         var blowUp = textURI.length/text.length;
         var newLength = Math.floor(length / blowUp) - 3;  // -3 for "..."
         do {
             // trim the text & show that it was trimmed...
             text = text.substring(0, newLength) + "...";
-            textURI = encodeURI(text);
+            textURI = encodeURIComponent(text);
             newLength = Math.floor(0.9 * newLength);
         } while (textURI.length > length);
     }
 
     return textURI;
-}
-
-// Makes sure a string doesn't mess with the url encoding
-function cleanStringForURL(str) {
-  str = str.replaceAll("&", "and");
-  str = str.replaceAll("+", "and");
-  str = str.replaceAll("#", "number ");
-  return str;
 }
